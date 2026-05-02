@@ -1,0 +1,25 @@
+{
+  "name": "horror-game-client",
+  "version": "1.0.0",
+  "description": "Duo Game Client",
+  "main": "electron-main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . DuoGame --platform=win32 --arch=x64 --out=dist --overwrite",
+    "run-server": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "electron": "^41.3.0",
+    "electron-packager": "^17.1.2"
+  }
+}
