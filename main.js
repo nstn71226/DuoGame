@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { loadMap1, updateMap1, syncBridgeOnline, autoPlatforms, movingPlatform, slidingBridge, portalModel } from "./map1.js"; 
 import { loadMap2, updateMap2, map2Skybox, portalModel2 } from "./map2.js"; 
 import { loadMap3, updateMap3, syncMap3TrapOnline, map3Skybox, portalModel3, resetMap3Traps } from "./map3.js"; 
-import { loadMap4, updateMap4, tryFire, syncCannonOnline, map4Skybox, zombieData, finalBoss, button1, button2, barrier, flagCloth } from "./map4.js";
+import { loadMap4, updateMap4, tryFire, syncCannonOnline, map4Skybox, zombieData, finalBoss, button1, button2, barrier, flagCloth, syncZombieOnline } from "./map4.js"; 
 import { Player } from "./player.js";
 import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
 
@@ -17,6 +17,36 @@ let myRole = 'player1';
 let socket = null;
 let isNetworkPause = false; 
 
+// ==========================================
+// 🎵 HỆ THỐNG ÂM THANH NỀN & SFX
+// ==========================================
+window.isSFXOn = true;
+window.isMusicOn = true;
+
+const bgMusic = new Audio('models/musicnen.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 0.4; // Chỉnh nhỏ nhẹ nhàng để k bị điếc tai
+
+// Lắng nghe sự kiện gạt nút BGM
+const toggleMusic = document.getElementById('toggle-music');
+if (toggleMusic) {
+    toggleMusic.addEventListener('change', (e) => {
+        window.isMusicOn = e.target.checked;
+        if (window.isMusicOn && isGameStarted) {
+            bgMusic.play().catch(() => {});
+        } else {
+            bgMusic.pause();
+        }
+    });
+}
+
+// Lắng nghe sự kiện gạt nút Tiếng động (SFX)
+const toggleSfx = document.getElementById('toggle-sfx');
+if (toggleSfx) {
+    toggleSfx.addEventListener('change', (e) => {
+        window.isSFXOn = e.target.checked;
+    });
+}
 // --- ĐỊA CHỈ SERVER ---
 const SERVER_URL = 'https://duo-game-sv.onrender.com';
 
@@ -97,26 +127,14 @@ let instructionTimeout;
 
 const mapHints = {
     1: `<div class="hint-title">MAP 1</div>
-        🎯 <b>Mục tiêu:</b> Phối hợp giữa các nhân vật để vượt chướng ngại vật và tiến đến cổng dịch chuyển.<br><br>
-        ⚙️ <b>Cơ chế chính:</b><br>
-        - <b>Nút bấm:</b> Đứng lên để kích hoạt bệ thang.<br>
-        - <b>Trụ điều khiển:</b> Nhấn <b>E</b> (hoặc <b>X/Square</b> trên tay cầm) để sử dụng, dùng <b>A/D</b> (hoặc <b>Analog trái</b>) để di chuyển bệ.`,
-        
+        🎯 <b>Mục tiêu:</b> Phối hợp giữa các nhân vật để vượt chướng ngại vật.<br><br>
+        ⚙️ <b>Cơ chế chính:</b> Nút bấm và Trụ điều khiển.`,
     2: `<div class="hint-title">MAP 2</div>
-        🎯 <b>Mục tiêu:</b> Phối hợp giữa các nhân vật để vượt chướng ngại vật và tiến đến cổng dịch chuyển.<br><br>
-        ⚙️ <b>Cơ chế chính:</b><br>
-        - <b>Nút đỏ đôi:</b> Cả hai nhân vật phải đứng đồng thời lên 2 nút đỏ để mở đường di chuyển.`,
-        
+        🎯 <b>Mục tiêu:</b> Phối hợp cùng nhau vượt chướng ngại vật.`,
     3: `<div class="hint-title">MAP 3</div>
-        🎯 <b>Mục tiêu:</b> Phối hợp giữa các nhân vật để vượt chướng ngại vật và triệu hồi cổng dịch chuyển.<br><br>
-        ⚙️ <b>Cơ chế chính:</b><br>
-        - <b>Nút bấm đôi:</b> Hai nhân vật phải kích hoạt cùng lúc (Phím <b>E</b> hoặc nút <b>X/Square</b>) để triệu hồi cổng.`,
-        
+        🎯 <b>Mục tiêu:</b> chạm khối cầu lơ lửng màu xanh cùng lúc để mở cổng.`,
     4: `<div class="hint-title">MAP 4</div>
-        🎯 <b>Mục tiêu:</b> Thu thập đủ 3 chìa khóa để mở cổng và đánh bại trùm.<br><br>
-        ⚙️ <b>Cơ chế chính:</b><br>
-        - <b>Chìa khóa:</b> 2 chiếc nằm rải trong map, 1 chiếc do zombie canh giữ.<br>
-        - <b>Chiến đấu:</b> Nhấn <b>E</b> (hoặc <b>X/Square</b>) để điều khiển máy nỏ. Dùng <b>Chuột trái</b> (hoặc <b>RT/R2</b>) để bắn tiêu diệt kẻ địch.`
+        🎯 <b>Mục tiêu:</b> Tìm chìa khóa và Tiêu diệt Boss.`
 };
 
 function updateAndShowInstruction(mapNum) {
@@ -210,7 +228,10 @@ function startGame() {
     isGameStarted = true;
     transitionToMap(1); 
     document.body.requestPointerLock(); 
-}
+    // 💡 BẮT ĐẦU PHÁT NHẠC NỀN KHI VÀO GAME
+    if (window.isMusicOn) {
+        bgMusic.play().catch(e => console.log("Cần click chuột vào màn hình để phát nhạc"));
+}}
 
 document.getElementById('local-mode-btn').addEventListener('click', () => { gameMode = 'local'; startGame(); });
 
@@ -240,11 +261,12 @@ function initOnline(roomId, action) {
                 remotePlayer.cameraAngleX = data.camX || 0;
                 remotePlayer.cameraAngleY = data.camY || 0.5;
 
-                // 💡 ĐỒNG BỘ TRẠNG THÁI SỐNG / CHẾT CỦA BẠN BÈ
-                remotePlayer.isDead = data.isDead;
-                if (data.isDead) {
+                if (data.isDead && !remotePlayer.isDead) {
+                    remotePlayer.isDead = true;
+                    remotePlayer.deathTimer = 5.0; 
                     remotePlayer.object.visible = false;
-                } else if (!remotePlayer.object.visible) {
+                } else if (!data.isDead && remotePlayer.isDead) {
+                    remotePlayer.isDead = false;
                     remotePlayer.object.visible = true;
                 }
             }
@@ -270,13 +292,14 @@ function initOnline(roomId, action) {
             if (actionData.type === 'bossTakeDamage' && currentMap === 4) {
                 if (finalBoss && !finalBoss.isDead) finalBoss.takeDamage(actionData.damage);
             }
-            
-            // 💡 NHẬN TÍN HIỆU ĐÓNG RÀO CHẮN TỪ BẠN BÈ
             if (actionData.type === 'triggerBossArena' && currentMap === 4) {
                 if (finalBoss) {
                     finalBoss.bossArenaTriggered = true;
                     window.arenaSynced = true;
                 }
+            }
+            if (actionData.type === 'syncZombie' && currentMap === 4 && myRole === 'player2') {
+                syncZombieOnline(actionData.zombieData);
             }
         });
     } else {
@@ -302,7 +325,7 @@ function executeMapReset(mapIndex) {
         1: [new THREE.Vector3(37, 13, 4), new THREE.Vector3(36, 13, 4)],
         2: [new THREE.Vector3(998, 4, 1000), new THREE.Vector3(995, 4, 1000)],
         3: [new THREE.Vector3(989, 1, -53), new THREE.Vector3(987, 1, -53)],
-        4: [new THREE.Vector3(476, 8, 505), new THREE.Vector3(474, 8, 505)]
+        4: [new THREE.Vector3(490, 8, 490), new THREE.Vector3(474, 8, 505)]
     };
     
     player1.object.position.copy(startMapPositions[mapIndex][0]);
@@ -381,6 +404,7 @@ document.addEventListener('pointerlockchange', () => {
                 socket.emit('gameAction', { type: 'resumeGame' });
             }
             isNetworkPause = false; 
+            clock.getDelta(); // 💡 VÁ LỖI ALT-TAB
         } else {
             if (pauseMenu) pauseMenu.style.display = 'flex';
             if (gameMode === 'online' && socket && !isNetworkPause) {
@@ -395,6 +419,7 @@ if (pauseMenu) pauseMenu.addEventListener('mousedown', (e) => e.stopPropagation(
 
 const resumeBtn = document.getElementById('resume-btn');
 if (resumeBtn) resumeBtn.addEventListener('click', () => {
+    clock.getDelta(); // 💡 VÁ LỖI ALT-TAB
     document.body.requestPointerLock();
 });
 
@@ -497,7 +522,7 @@ function animate() {
       player1.object.userData.isScaled = true; 
   }
 
-  const delta = clock.getDelta();
+  const delta = Math.min(clock.getDelta(), 0.1); // 💡 VÁ LỖI ALT-TAB CHÍNH
   
   const portals = [{m: 1, p: portalModel, b: portalBox}, {m: 2, p: portalModel2, b: portalBox2}, {m: 3, p: portalModel3, b: portalBox3}];
   portals.forEach(port => {
@@ -538,10 +563,10 @@ function animate() {
           map3Deltas.triggeredTraps.forEach(trapId => { socket.emit('gameAction', { type: 'triggerMap3Trap', trapId: trapId }); });
       }
   } else if (currentMap === 4) {
-      const map4Deltas = updateMap4(player1, player2, delta, scene); 
+      const isHost = (gameMode === 'local' || myRole === 'player1');
+      const map4Deltas = updateMap4(player1, player2, delta, scene, isHost); 
       let localPlayer = (gameMode === 'online' && myRole === 'player2') ? player2 : player1;
       
-      // 💡 VÁ LỖI CỰC MẠNH: Boss chỉ được phép sát hại nhân vật của chính máy chủ đó, tha cho bóng ma!
       if (finalBoss && !finalBoss.isPatched) {
           const origKill = finalBoss.killPlayer.bind(finalBoss);
           finalBoss.killPlayer = function(p) {
@@ -550,7 +575,6 @@ function animate() {
           finalBoss.isPatched = true;
       }
 
-      // 💡 ĐỒNG BỘ RÀO CHẮN
       if (finalBoss && finalBoss.bossArenaTriggered && !window.arenaSynced) {
           window.arenaSynced = true;
           if (socket && gameMode === 'online') socket.emit('gameAction', { type: 'triggerBossArena' });
@@ -571,6 +595,13 @@ function animate() {
           if (localPlayer.justDamagedBoss) {
               localPlayer.justDamagedBoss = false; 
               socket.emit('gameAction', { type: 'bossTakeDamage', damage: 2 });
+          }
+          
+          if (isHost && map4Deltas.zombieSyncData) {
+              socket.emit('gameAction', { 
+                  type: 'syncZombie', 
+                  zombieData: map4Deltas.zombieSyncData 
+              });
           }
       }
   }
@@ -597,7 +628,7 @@ function animate() {
               anim: activeLocalPlayer.currentAnimName,
               camX: activeLocalPlayer.cameraAngleX, 
               camY: activeLocalPlayer.cameraAngleY,
-              isDead: activeLocalPlayer.isDead // 💡 GỬI TÍN HIỆU SỐNG/CHẾT LÊN MẠNG
+              isDead: activeLocalPlayer.isDead 
           });
       }
   }

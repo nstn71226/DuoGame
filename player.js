@@ -25,7 +25,7 @@ export class Player {
     this.loader = new ColladaLoader();
     this.object = null;
     this.spawnPoint = startPos.clone();
-    this.respawnPoint = startPos.clone(); // 💡 Đảm bảo luôn có điểm hồi sinh
+    this.respawnPoint = startPos.clone(); 
     this.boxSize = new THREE.Vector3(0.25, 1.05, 0.25); 
     this.boxOffset = new THREE.Vector3(0, 0.525, 0);    
     this.isControllingDevice = false; 
@@ -36,7 +36,6 @@ export class Player {
     this.currentAction = null;
     this.currentAnimName = "";
     
-    // 💡 BIẾN CHO KỸ NĂNG CHÉM 360
     this.attackCooldown = 0;
     this.damageTimer = 0;      
     this.attackAnimTimer = 0;  
@@ -44,10 +43,19 @@ export class Player {
     this.vfxGroup = null;      
     this.justDamagedBoss = false; 
     
-    // NỘI SUY MẠNG
     this.targetPosition = startPos.clone(); 
     this.targetRotationY = 0;
     this.remoteAnim = "Idle"; 
+
+    // 💡 KHỞI TẠO ÂM THANH (Chỉ máy của ai người nấy nghe tiếng bước chân mình)
+    if (this.isLocal) {
+        this.runSound = new Audio('models/chay.mp3');
+        this.runSound.loop = true;
+        this.runSound.volume = 0.8;
+        
+        this.jumpSound = new Audio('models/nhay.mp3');
+        this.jumpSound.volume = 0.7;
+    }
 
     const anims = animConfig || {
         idle: 'models/idle.dae',
@@ -364,8 +372,10 @@ export class Player {
     if (this.isLocal) {
         this.checkGamepad();
         const moveDir = new THREE.Vector3(0, 0, 0);
+        
+        // 💡 LẤY TRẠNG THÁI NÚT GẠT TỪ MENU
+        const sfxEnabled = window.isSFXOn !== false; 
 
-        // 💡 SỬA LỖI 1: Nếu chết thì bất động, không cho bấm phím di chuyển
         if (!this.isControllingDevice && !this.isDead) {
             const forward = new THREE.Vector3();
             camera.getWorldDirection(forward);
@@ -392,10 +402,34 @@ export class Player {
                   }
               }
             }
-            if (this.keys[this.keyMap.jump] && this.isGrounded) { this.velocityY = this.jumpForce; this.isGrounded = false; }
+            
+            // 💡 PHÁT TIẾNG NHẢY
+            if (this.keys[this.keyMap.jump] && this.isGrounded) { 
+                this.velocityY = this.jumpForce; 
+                this.isGrounded = false; 
+                if (sfxEnabled && this.jumpSound) {
+                    this.jumpSound.currentTime = 0;
+                    this.jumpSound.play().catch(()=>{});
+                }
+            }
         }
 
-        // 💡 SỬA LỖI 2: Nếu chết thì TẮT TRỌNG LỰC, không cho rơi xuống vực âm -15
+        // 💡 PHÁT/DỪNG TIẾNG CHẠY BƯỚC CHÂN
+        if (isMoving && this.isGrounded && !this.isDead && !this.isControllingDevice) {
+            if (sfxEnabled && this.runSound && this.runSound.paused) {
+                this.runSound.play().catch(()=>{});
+            }
+        } else {
+            if (this.runSound && !this.runSound.paused) {
+                this.runSound.pause();
+            }
+        }
+        
+        // Dừng âm thanh ngay lập tức nếu tắt SFX trong menu
+        if (!sfxEnabled && this.runSound && !this.runSound.paused) {
+            this.runSound.pause();
+        }
+
         if (!this.isDead) {
             this.velocityY += this.gravity;
             const nextPosY = this.object.position.clone(); nextPosY.y += this.velocityY;
@@ -406,7 +440,6 @@ export class Player {
                 this.velocityY = 0;
             }
 
-            // Nếu lỡ rơi vực thì về điểm Save
             if (this.object.position.y < -15) { 
                 this.object.position.copy(this.respawnPoint || this.spawnPoint); 
                 this.velocityY = 0; 
@@ -437,7 +470,7 @@ export class Player {
             if (this.attackAnimTimer > 0) {
                 this.playAnimation('SpinAttack');
             } 
-            else if (!this.isGrounded && !this.isDead) { // 💡 Tránh rớt lúc chết
+            else if (!this.isGrounded && !this.isDead) { 
                 this.playAnimation('Jump');
             } 
             else if (isMoving) {
