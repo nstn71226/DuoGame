@@ -94,11 +94,14 @@ export function loadMap3(scene, colliders) {
 
     const gltfLoader = new GLTFLoader();
     
+    // 💡 1. BẬT BÓNG CHO TOÀN BỘ MAP 3
     gltfLoader.load('models/map3.glb', (gltf) => {
         const mapModel = gltf.scene;
         mapModel.scale.set(1.5, 1.5, 1.5); 
         mapModel.traverse((child) => {
             if (child.isMesh) {
+                child.castShadow = true;      // Đổ bóng
+                child.receiveShadow = true;   // Nhận bóng
                 child.geometry.computeBoundingBox();
                 child.userData.box = new THREE.Box3().setFromObject(child);
                 colliders.push(child);
@@ -106,14 +109,22 @@ export function loadMap3(scene, colliders) {
         });
         map3Group.add(mapModel);
 
+        // 💡 2. BẬT BÓNG CHO XE
         gltfLoader.load('models/car.glb', (gltfCar) => {
             carModel1 = gltfCar.scene;
             carModel1.scale.set(3, 3, 3); 
+            
+            carModel1.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
             carModel1.position.set(991, 0.7, 20); 
             carModel1.visible = false; 
             carModel1.rotation.y = Math.PI / 2; 
             carModel1.userData.box = new THREE.Box3(); 
-
             scene.add(carModel1);
 
             carModel2 = carModel1.clone(); carModel2.position.set(988, 0.7, 30); carModel2.userData.box = new THREE.Box3(); scene.add(carModel2);
@@ -134,20 +145,25 @@ export function loadMap3(scene, colliders) {
     const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, 2, 8);
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
     const pole = new THREE.Mesh(poleGeo, poleMat);
+    pole.castShadow = true; // Cột cờ đổ bóng
     flagGroup.add(pole);
 
     const flagGeo = new THREE.PlaneGeometry(1, 0.6, 5, 5); 
     const flagMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
     flagMesh3 = new THREE.Mesh(flagGeo, flagMat);
     flagMesh3.position.set(0.5, 0.7, 0); 
+    flagMesh3.castShadow = true; // Vải cờ đổ bóng
     flagGroup.add(flagMesh3);
-
     scene.add(flagGroup);
 
+    // Bật bóng cho 2 bức tường di động
     const wallGeo = new THREE.BoxGeometry(4.5, 4.5, 1);
     const wallMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
-    wall8 = new THREE.Mesh(wallGeo, wallMat); wall8.position.set(989, -5, 48); wall8.userData.box = new THREE.Box3().setFromObject(wall8); scene.add(wall8); colliders.push(wall8); 
-    wall9 = new THREE.Mesh(wallGeo, wallMat.clone()); wall9.position.set(991, -5, 45); wall9.userData.box = new THREE.Box3().setFromObject(wall9); scene.add(wall9); colliders.push(wall9); 
+    wall8 = new THREE.Mesh(wallGeo, wallMat); wall8.position.set(989, -5, 48); wall8.userData.box = new THREE.Box3().setFromObject(wall8); 
+    wall8.castShadow = true; wall8.receiveShadow = true; scene.add(wall8); colliders.push(wall8); 
+    
+    wall9 = new THREE.Mesh(wallGeo, wallMat.clone()); wall9.position.set(991, -5, 45); wall9.userData.box = new THREE.Box3().setFromObject(wall9); 
+    wall9.castShadow = true; wall9.receiveShadow = true; scene.add(wall9); colliders.push(wall9); 
 
     const buttonGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.5, 16); 
     const buttonMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000 });
@@ -183,7 +199,6 @@ export function loadMap3(scene, colliders) {
         portalModel3.position.set(980, 65.0, -63); 
         portalModel3.scale.set(0.5, 0.5, 0.5); 
         portalModel3.visible = false; 
-        
         scene.add(portalModel3);
     });
 
@@ -229,10 +244,17 @@ export function loadMap3(scene, colliders) {
         movingClouds.push(cloudGroup); 
     });
 
+    // 💡 3. BẬT BÓNG CHO MÂY
     gltfLoader.load('models/may.glb', (gltf) => {
         const cloudModel = gltf.scene;
         cloudModel.scale.set(1.5, 1.5, 1.5); 
-        
+        cloudModel.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
         elevatorPad.add(cloudModel.clone());
         elevatorPad.userData.box.setFromObject(elevatorPad);
 
@@ -242,9 +264,15 @@ export function loadMap3(scene, colliders) {
         });
     });
 
+    // 💡 4. BẬT BÓNG CHO CHIM (Chỉ cần đổ bóng, không cần nhận bóng)
     gltfLoader.load('models/bird.glb', (gltf) => {
         birdModel = gltf.scene;
         birdModel.scale.set(1.5, 1.5, 1.5); 
+        birdModel.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+            }
+        });
         
         birdModel.userData.box = new THREE.Box3();
 
@@ -253,11 +281,9 @@ export function loadMap3(scene, colliders) {
             const action = birdMixer.clipAction(gltf.animations[0]);
             action.play();
         }
-
         scene.add(birdModel);
     });
 }
-
 // 💡 HÀM ĐỒNG BỘ: Nhận lệnh từ Server để bật bẫy
 export function syncMap3TrapOnline(trapId) {
     switch(trapId) {

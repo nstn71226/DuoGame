@@ -51,10 +51,10 @@ export class Player {
     if (this.isLocal) {
         this.runSound = new Audio('models/chay.mp3');
         this.runSound.loop = true;
-        this.runSound.volume = 0.8;
+        this.runSound.volume = 1;
         
         this.jumpSound = new Audio('models/nhay.mp3');
-        this.jumpSound.volume = 0.7;
+        this.jumpSound.volume = 1;
     }
 
     const anims = animConfig || {

@@ -93,8 +93,9 @@ export function loadMap4(scene, colliders) {
 
         mapModel.traverse((child) => {
             if (child.isMesh) {
-                child.castShadow = false; 
-                child.receiveShadow = false; 
+                // 💡 BẬT ĐỔ BÓNG CHO MAP 4
+                child.castShadow = true; 
+                child.receiveShadow = true; 
                 
                 child.geometry.computeBoundingBox();
                 const size = new THREE.Vector3();
@@ -123,6 +124,7 @@ export function loadMap4(scene, colliders) {
             
             daibacModel.traverse((child) => {
                 if (child.isMesh) {
+                    // 💡 BẬT ĐỔ BÓNG CHO ĐẠI BÁC
                     child.castShadow = true; 
                     child.receiveShadow = true;
                     child.material = cannonMat; 
@@ -146,7 +148,9 @@ export function loadMap4(scene, colliders) {
             danModel.scale.set(1, 1, 1); 
             danModel.traverse((child) => {
                 if (child.isMesh) {
+                    // 💡 BẬT ĐỔ BÓNG CHO ĐẠN ĐẠI BÁC
                     child.castShadow = true;
+                    child.receiveShadow = true;
                     if (map4Material) child.material = map4Material;
                 }
             });
@@ -192,7 +196,12 @@ export function loadMap4(scene, colliders) {
                 color: 0xffd700, emissive: 0x443300, metalness: 0.8, roughness: 0.2        
             });
             keyModel.traverse((child) => {
-                if (child.isMesh) { child.castShadow = true; child.material = goldMaterial; }
+                if (child.isMesh) { 
+                    // 💡 BẬT ĐỔ BÓNG CHO CHÌA KHÓA
+                    child.castShadow = true; 
+                    child.receiveShadow = true; 
+                    child.material = goldMaterial; 
+                }
             });
             button1 = keyModel.clone(); button1.position.set(475, 0.5, 520); button1.userData = { isCollected: false }; scene.add(button1);
             button2 = keyModel.clone(); button2.position.set(448, 0.5, 466); button2.userData = { isCollected: false }; scene.add(button2);
@@ -204,7 +213,13 @@ export function loadMap4(scene, colliders) {
         const zModel = collada.scene;
         zModel.scale.set(0.015, 0.015, 0.015);
         zModel.position.copy(zombieData.spawnPos); 
-        zModel.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+        zModel.traverse((child) => { 
+            if (child.isMesh) { 
+                // 💡 BẬT ĐỔ BÓNG CHO ZOMBIE
+                child.castShadow = true; 
+                child.receiveShadow = true; 
+            } 
+        });
         scene.add(zModel);
         zombieData.model = zModel;
         zombieData.mixer = new THREE.AnimationMixer(zModel);
@@ -232,6 +247,9 @@ export function loadMap4(scene, colliders) {
 
     barrier = new THREE.Mesh(new THREE.BoxGeometry(4, 7, 0.5), new THREE.MeshStandardMaterial({ color: 0x444444 }));
     barrier.position.set(490.5, 1, 474); 
+    // 💡 BẬT ĐỔ BÓNG CHO RÀO CHẮN
+    barrier.castShadow = true;
+    barrier.receiveShadow = true;
     barrier.userData.box = new THREE.Box3().setFromObject(barrier);
     scene.add(barrier);
     colliders.push(barrier); 
@@ -246,7 +264,9 @@ export function loadMap4(scene, colliders) {
     const poleMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.2 });
     const pole = new THREE.Mesh(poleGeo, poleMat);
     pole.position.y = 1; 
+    // 💡 BẬT ĐỔ BÓNG CHO CỘT CỜ
     pole.castShadow = true;
+    pole.receiveShadow = true;
     flagGroup.add(pole);
 
     const clothGeo = new THREE.PlaneGeometry(1.8, 1);
@@ -256,7 +276,9 @@ export function loadMap4(scene, colliders) {
     });
     flagCloth = new THREE.Mesh(clothGeo, clothMat);
     flagCloth.position.set(1, 2.5, 0); 
+    // 💡 BẬT ĐỔ BÓNG CHO VẢI CỜ
     flagCloth.castShadow = true;
+    flagCloth.receiveShadow = true;
     flagGroup.add(flagCloth);
 }
 
@@ -296,7 +318,7 @@ export function syncCannonOnline(isControlling) {
     }
 }
 
-// 🟢 THÊM MỚI: HÀM ĐỒNG BỘ ZOMBIE TỪ MẠNG (DÀNH CHO MÁY CLIENT)
+// HÀM ĐỒNG BỘ ZOMBIE TỪ MẠNG (DÀNH CHO MÁY CLIENT)
 export function syncZombieOnline(data) {
     if (!zombieData.model) return;
     
@@ -312,13 +334,8 @@ export function syncZombieOnline(data) {
     }
 }
 
-// 🔴 ĐÃ XÓA: Hàm resetKeys()
-
-// 🟢 CHỈNH SỬA: Thêm tham số `isHost` để phân biệt chủ phòng / người vào phòng
 export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true) {
     if (!barrier || !player1.object || !player2.object) return {};
-    
-    // 🔴 ĐÃ XÓA: Gán window.sceneReferenceMap4 = scene vì không cần reset key nữa
     
     cannonJustReleased = false; 
 
@@ -379,14 +396,12 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
             player1.object.position.copy(player1.respawnPoint || SAVE_POINT_1);
             if (player1.velocity) player1.velocity.set(0, 0, 0);
             player1.velocityY = 0; 
-            // 🔴 ĐÃ XÓA: Gọi resetKeys()
         }
 
         if (p2Box.intersectsBox(fireZone.userData.box)) {
             player2.object.position.copy(player2.respawnPoint || SAVE_POINT_1);
             if (player2.velocity) player2.velocity.set(0, 0, 0);
             player2.velocityY = 0; 
-            // 🔴 ĐÃ XÓA: Gọi resetKeys()
         }
     }
 
@@ -423,7 +438,6 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
             b.position.add(b.userData.velocity.clone().multiplyScalar(delta));
             b.userData.life -= delta;
 
-            // 🟢 THÊM MỚI: Chỉ tính va chạm Đạn với Zombie trên máy Host để tránh trừ 2 lần máu
             if (isHost && zombieData.model && !zombieData.isDead) {
                 if (b.position.distanceTo(zombieData.model.position) < 2.5) { 
                     zombieData.health--;
@@ -464,9 +478,8 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
     // 🧠 AI CỦA ZOMBIE 
     // ----------------------------------------
     if (zombieData.model) {
-        if (zombieData.mixer) zombieData.mixer.update(delta); // Animation luôn chạy trên cả 2 máy
+        if (zombieData.mixer) zombieData.mixer.update(delta);
 
-        // 🟢 THÊM MỚI: Chỉ máy chủ (Host) mới quyết định di chuyển và tấn công
         if (isHost && !zombieData.isDead) {
             const zPos = zombieData.model.position;
             const p1Pos = player1.object.position;
@@ -558,12 +571,12 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
         }
     }
 
-    // 🟢 THÊM MỚI: Trích xuất Data của Zombie để Host trả về cho Network
+    // Trích xuất Data của Zombie để Host trả về cho Network
     let zombieSyncData = null;
     if (isHost && zombieData.model) {
         zombieSyncData = {
             position: zombieData.model.position.clone(),
-            quaternion: zombieData.model.quaternion.clone(), // Gửi cả quaternion để xoay hướng mượt
+            quaternion: zombieData.model.quaternion.clone(), 
             state: zombieData.state,
             health: zombieData.health,
             isDead: zombieData.isDead
