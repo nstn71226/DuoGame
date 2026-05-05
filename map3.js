@@ -73,7 +73,7 @@ let isCarSummoned7 = false;
 let isCarSummoned8 = false;
 let isCarSummoned9 = false;
 
-// 💡 BIẾN KHÓA BẪY (Chỉ dùng 1 lần)
+// BIẾN KHÓA BẪY (Chỉ dùng 1 lần)
 let isCarLocked1 = false;
 let isCarLocked2 = false;
 let isCarLocked3 = false;
@@ -84,8 +84,13 @@ let isCarLocked7 = false;
 let isCarLocked8 = false;
 let isCarLocked9 = false;
 
-// 💡 TỐC ĐỘ XE: Đã giảm 20% (từ 60 xuống 48)
+// TỐC ĐỘ XE
 const CAR_SPEED = 48; 
+
+// 💡 CỜ THEO DÕI ÂM THANH NÚT
+let wasCoopBtn1Pressed = false;
+let wasCoopBtn2Pressed = false;
+let wasElevatorPressed = false;
 
 export function loadMap3(scene, colliders) {
     const map3Group = new THREE.Group();
@@ -94,14 +99,14 @@ export function loadMap3(scene, colliders) {
 
     const gltfLoader = new GLTFLoader();
     
-    // 💡 1. BẬT BÓNG CHO TOÀN BỘ MAP 3
+    // BẬT BÓNG CHO TOÀN BỘ MAP 3
     gltfLoader.load('models/map3.glb', (gltf) => {
         const mapModel = gltf.scene;
         mapModel.scale.set(1.5, 1.5, 1.5); 
         mapModel.traverse((child) => {
             if (child.isMesh) {
-                child.castShadow = true;      // Đổ bóng
-                child.receiveShadow = true;   // Nhận bóng
+                child.castShadow = true;      
+                child.receiveShadow = true;   
                 child.geometry.computeBoundingBox();
                 child.userData.box = new THREE.Box3().setFromObject(child);
                 colliders.push(child);
@@ -109,7 +114,7 @@ export function loadMap3(scene, colliders) {
         });
         map3Group.add(mapModel);
 
-        // 💡 2. BẬT BÓNG CHO XE
+        // BẬT BÓNG CHO XE
         gltfLoader.load('models/car.glb', (gltfCar) => {
             carModel1 = gltfCar.scene;
             carModel1.scale.set(3, 3, 3); 
@@ -145,18 +150,17 @@ export function loadMap3(scene, colliders) {
     const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, 2, 8);
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
     const pole = new THREE.Mesh(poleGeo, poleMat);
-    pole.castShadow = true; // Cột cờ đổ bóng
+    pole.castShadow = true; 
     flagGroup.add(pole);
 
     const flagGeo = new THREE.PlaneGeometry(1, 0.6, 5, 5); 
     const flagMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
     flagMesh3 = new THREE.Mesh(flagGeo, flagMat);
     flagMesh3.position.set(0.5, 0.7, 0); 
-    flagMesh3.castShadow = true; // Vải cờ đổ bóng
+    flagMesh3.castShadow = true; 
     flagGroup.add(flagMesh3);
     scene.add(flagGroup);
 
-    // Bật bóng cho 2 bức tường di động
     const wallGeo = new THREE.BoxGeometry(4.5, 4.5, 1);
     const wallMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
     wall8 = new THREE.Mesh(wallGeo, wallMat); wall8.position.set(989, -5, 48); wall8.userData.box = new THREE.Box3().setFromObject(wall8); 
@@ -244,7 +248,6 @@ export function loadMap3(scene, colliders) {
         movingClouds.push(cloudGroup); 
     });
 
-    // 💡 3. BẬT BÓNG CHO MÂY
     gltfLoader.load('models/may.glb', (gltf) => {
         const cloudModel = gltf.scene;
         cloudModel.scale.set(1.5, 1.5, 1.5); 
@@ -264,7 +267,6 @@ export function loadMap3(scene, colliders) {
         });
     });
 
-    // 💡 4. BẬT BÓNG CHO CHIM (Chỉ cần đổ bóng, không cần nhận bóng)
     gltfLoader.load('models/bird.glb', (gltf) => {
         birdModel = gltf.scene;
         birdModel.scale.set(1.5, 1.5, 1.5); 
@@ -284,7 +286,7 @@ export function loadMap3(scene, colliders) {
         scene.add(birdModel);
     });
 }
-// 💡 HÀM ĐỒNG BỘ: Nhận lệnh từ Server để bật bẫy
+
 export function syncMap3TrapOnline(trapId) {
     switch(trapId) {
         case 1: if (!isCarLocked1) isCarSummoned1 = true; break;
@@ -302,7 +304,6 @@ export function syncMap3TrapOnline(trapId) {
 export function resetMap3Traps() {
     isCarSummoned1 = isCarSummoned2 = isCarSummoned3 = isCarSummoned4 = isCarSummoned5 = isCarSummoned6 = isCarSummoned7 = isCarSummoned8 = isCarSummoned9 = false;
     
-    // KHÔI PHỤC TRẠNG THÁI KHÓA CHO TẤT CẢ CÁC BẪY
     isCarLocked1 = isCarLocked2 = isCarLocked3 = isCarLocked4 = isCarLocked5 = isCarLocked6 = isCarLocked7 = isCarLocked8 = isCarLocked9 = false;
 
     wall8Timer = wall9Timer = 0;
@@ -334,7 +335,6 @@ function checkCarAccident(car, player1, player2, p1Box, p2Box) {
 export function updateMap3(player1, player2, delta) {
     if (!player1.object || !player2.object) return {};
     
-    // Mảng chứa ID các bẫy vừa được đạp để gửi lên server
     let triggeredTraps = [];
 
     if (flagMesh3) {
@@ -436,6 +436,12 @@ export function updateMap3(player1, player2, delta) {
         let isBtn1Pressed = p1OnBtn1 || p2OnBtn1;
         let isBtn2Pressed = p1OnBtn2 || p2OnBtn2;
 
+        // 💡 GỌI ÂM THANH NÚT CO-OP
+        if (isBtn1Pressed && !wasCoopBtn1Pressed) { if (window.playButtonSound) window.playButtonSound(); }
+        if (isBtn2Pressed && !wasCoopBtn2Pressed) { if (window.playButtonSound) window.playButtonSound(); }
+        wasCoopBtn1Pressed = isBtn1Pressed;
+        wasCoopBtn2Pressed = isBtn2Pressed;
+
         coopButton1.position.y = isBtn1Pressed ? coopButton1.userData.baseY - 0.4 : coopButton1.userData.baseY;
         coopButton1.material.color.setHex(isBtn1Pressed ? 0x00ff00 : 0x0000ff);
         coopButton1.material.emissive.setHex(isBtn1Pressed ? 0x005500 : 0x000055);
@@ -492,6 +498,10 @@ export function updateMap3(player1, player2, delta) {
         let isElevatorCalled = p1Box.intersectsBox(elevatorButton.userData.box) || p2Box.intersectsBox(elevatorButton.userData.box) ||
                                p1Box.intersectsBox(elevatorButtonTop.userData.box) || p2Box.intersectsBox(elevatorButtonTop.userData.box);
         
+        // 💡 GỌI ÂM THANH NÚT THANG MÁY
+        if (isElevatorCalled && !wasElevatorPressed) { if (window.playButtonSound) window.playButtonSound(); }
+        wasElevatorPressed = isElevatorCalled;
+
         const oldElevatorY = elevatorPad.position.y;
         if (isElevatorCalled && elevatorPad.position.y < ELEVATOR_TARGET_Y) elevatorPad.position.y += ELEVATOR_SPEED * delta;
         else if (!isElevatorCalled && elevatorPad.position.y > ELEVATOR_START_Y) elevatorPad.position.y -= ELEVATOR_SPEED * delta;
@@ -510,6 +520,7 @@ export function updateMap3(player1, player2, delta) {
     // =====================================
     if (redButton1 && !isCarSummoned1 && !isCarLocked1 && (p1Box.intersectsBox(redButton1.userData.box) || p2Box.intersectsBox(redButton1.userData.box))) {
         isCarSummoned1 = true; triggeredTraps.push(1);
+        if (window.playButtonSound) window.playButtonSound(); // 💡 ÂM THANH BẪY 1
     }
     if (isCarSummoned1 && carModel1) { 
         carModel1.visible = true; 
@@ -525,6 +536,7 @@ export function updateMap3(player1, player2, delta) {
     
     if (redButton2 && !isCarSummoned2 && !isCarLocked2 && (p1Box.intersectsBox(redButton2.userData.box) || p2Box.intersectsBox(redButton2.userData.box))) {
         isCarSummoned2 = true; triggeredTraps.push(2);
+        if (window.playButtonSound) window.playButtonSound(); // 💡 ÂM THANH BẪY 2
     }
     if (isCarSummoned2 && carModel2) { 
         carModel2.visible = true; 
@@ -540,6 +552,7 @@ export function updateMap3(player1, player2, delta) {
 
     if (redButton3 && !isCarSummoned3 && !isCarLocked3 && (p1Box.intersectsBox(redButton3.userData.box) || p2Box.intersectsBox(redButton3.userData.box))) {
         isCarSummoned3 = true; triggeredTraps.push(3);
+        if (window.playButtonSound) window.playButtonSound(); // 💡 ÂM THANH BẪY 3
     }
     if (isCarSummoned3 && carModel3) { 
         carModel3.visible = true; 
@@ -555,6 +568,7 @@ export function updateMap3(player1, player2, delta) {
 
     if (redButton4 && !isCarSummoned4 && !isCarLocked4 && (p1Box.intersectsBox(redButton4.userData.box) || p2Box.intersectsBox(redButton4.userData.box))) {
         isCarSummoned4 = true; triggeredTraps.push(4);
+        if (window.playButtonSound) window.playButtonSound(); // 💡 ÂM THANH BẪY 4
     }
     if (isCarSummoned4 && carModel4A && carModel4B) {
         carModel4A.visible = carModel4B.visible = true;
@@ -573,6 +587,7 @@ export function updateMap3(player1, player2, delta) {
 
     if (redButton5 && !isCarSummoned5 && !isCarLocked5 && (p1Box.intersectsBox(redButton5.userData.box) || p2Box.intersectsBox(redButton5.userData.box))) {
         isCarSummoned5 = true; triggeredTraps.push(5);
+        if (window.playButtonSound) window.playButtonSound(); // 💡 ÂM THANH BẪY 5
     }
     if (isCarSummoned5 && carModel5) { 
         carModel5.visible = true; 
@@ -588,6 +603,7 @@ export function updateMap3(player1, player2, delta) {
 
     if (redButton6 && !isCarSummoned6 && !isCarLocked6 && (p1Box.intersectsBox(redButton6.userData.box) || p2Box.intersectsBox(redButton6.userData.box))) {
         isCarSummoned6 = true; triggeredTraps.push(6);
+        if (window.playButtonSound) window.playButtonSound(); // 💡 ÂM THANH BẪY 6
     }
     if (isCarSummoned6 && carModel6) { 
         carModel6.visible = true; 
@@ -603,6 +619,7 @@ export function updateMap3(player1, player2, delta) {
 
     if (redButton7 && !isCarSummoned7 && !isCarLocked7 && (p1Box.intersectsBox(redButton7.userData.box) || p2Box.intersectsBox(redButton7.userData.box))) {
         isCarSummoned7 = true; triggeredTraps.push(7);
+        if (window.playButtonSound) window.playButtonSound(); // 💡 ÂM THANH BẪY 7
     }
     if (isCarSummoned7 && carModel7) { 
         carModel7.visible = true; 
@@ -618,6 +635,7 @@ export function updateMap3(player1, player2, delta) {
 
     if (redButton8 && !isCarSummoned8 && !isCarLocked8 && (p1Box.intersectsBox(redButton8.userData.box) || p2Box.intersectsBox(redButton8.userData.box))) {
         isCarSummoned8 = true; triggeredTraps.push(8);
+        if (window.playButtonSound) window.playButtonSound(); // 💡 ÂM THANH BẪY 8
     }
     if (isCarSummoned8) {
         wall8Timer += delta; 
@@ -642,6 +660,7 @@ export function updateMap3(player1, player2, delta) {
 
     if (redButton9 && !isCarSummoned9 && !isCarLocked9 && (p1Box.intersectsBox(redButton9.userData.box) || p2Box.intersectsBox(redButton9.userData.box))) {
         isCarSummoned9 = true; triggeredTraps.push(9);
+        if (window.playButtonSound) window.playButtonSound(); // 💡 ÂM THANH BẪY 9
     }
     if (isCarSummoned9) {
         wall9Timer += delta; 

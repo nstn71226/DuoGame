@@ -29,12 +29,12 @@ export class Boss {
         this.flairWave1 = false;  
         this.flairWave2 = false;  
 
-        // 💡 Biến đếm thời gian đi bộ chậm
-        this.runslowCooldown = 20.0; // Đợi 20s
-        this.runslowTimer = 0;       // Đi chậm trong 4s
+        this.runslowCooldown = 20.0; 
+        this.runslowTimer = 0;       
         
         this.bullets = [];
         this.bossArenaTriggered = false; 
+        this.isThemePlaying = false; 
 
         this.model = null;
         this.mixer = null;
@@ -46,9 +46,71 @@ export class Boss {
         this.scene.add(this.debugBox);
         this.debugBox.visible = false; 
 
+        // 💡 KHỞI TẠO ÂM THANH
+        this.initAudio();
+        
         this.initUI();
         this.initArena(); 
         this.loadBoss();
+    }
+
+    // ==========================================
+    // 💡 HỆ THỐNG ÂM THANH BOSS
+    // ==========================================
+    initAudio() {
+        this.bossTheme = new Audio('models/bosstheme.mp3');
+        this.bossTheme.loop = true;
+        this.bossTheme.volume = 0.5;
+
+        this.bossKickSingle = new Audio('models/bosskick.mp3');
+        this.bossKickSingle.volume = 1.0;
+
+        this.bossKickLoop = new Audio('models/bosskick.mp3');
+        this.bossKickLoop.loop = true;
+        this.bossKickLoop.volume = 1.0;
+    }
+
+    playTheme() {
+        if (window.isMusicOn && !this.isThemePlaying) {
+            // Tắt nhạc nền cũ của game
+            if (window.bgMusic) window.bgMusic.pause();
+            
+            this.bossTheme.currentTime = 0;
+            this.bossTheme.play().catch(()=>{});
+            this.isThemePlaying = true;
+        }
+    }
+
+    stopTheme() {
+        if (this.isThemePlaying) {
+            this.bossTheme.pause();
+            this.isThemePlaying = false;
+            
+            // Bật lại nhạc nền game
+            if (window.isMusicOn && window.bgMusic) {
+                window.bgMusic.play().catch(()=>{});
+            }
+        }
+    }
+
+    playSingleKick() {
+        if (window.isSFXOn !== false) {
+            this.bossKickSingle.currentTime = 0;
+            this.bossKickSingle.play().catch(()=>{});
+        }
+    }
+
+    startLoopKick() {
+        if (window.isSFXOn !== false && this.bossKickLoop.paused) {
+            this.bossKickLoop.currentTime = 0;
+            this.bossKickLoop.play().catch(()=>{});
+        }
+    }
+
+    stopLoopKick() {
+        if (!this.bossKickLoop.paused) {
+            this.bossKickLoop.pause();
+        }
     }
 
     // ==========================================
@@ -196,7 +258,6 @@ export class Boss {
         this.bossButton2.userData.box = new THREE.Box3().setFromObject(this.bossButton2);
         this.scene.add(this.bossButton2);
 
-        // Tường đằng trước (to dày cản đường)
         const wallGeo = new THREE.BoxGeometry(5, 6, 1);
         const wallMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5 });
 
@@ -206,7 +267,6 @@ export class Boss {
         this.scene.add(this.bossFrontWall);
         if (this.colliders) this.colliders.push(this.bossFrontWall);
 
-        // Tường đằng sau bẫy người chơi
         const backWallGeo = new THREE.BoxGeometry(5, 6, 2); 
         this.bossBackWall = new THREE.Mesh(backWallGeo, wallMat);
         this.bossBackWall.position.set(490, -6, 476); 
@@ -349,18 +409,15 @@ export class Boss {
         this.model.traverse((child) => {
             if (child.isMesh && child.material) {
                 const fixColor = (mat) => {
-                    // Đổi màu nền
                     if (mat.color) mat.color.setHex(hexColor);
-                    
-                    // 💡 Ép phát sáng (Emissive) để xuyên qua mọi loại Texture
                     if (mat.emissive) {
                         if (hexColor === 0xffffff) {
-                            mat.emissive.setHex(0x000000); // Tắt phát sáng khi về trạng thái thường
+                            mat.emissive.setHex(0x000000); 
                         } else {
-                            mat.emissive.setHex(hexColor); // Phát sáng màu đỏ (hoặc màu bạn truyền vào)
+                            mat.emissive.setHex(hexColor); 
                         }
                     }
-                    mat.needsUpdate = true; // Bắt buộc Three.js cập nhật lại màu
+                    mat.needsUpdate = true; 
                 };
                 
                 if (Array.isArray(child.material)) child.material.forEach(fixColor);
@@ -381,7 +438,6 @@ export class Boss {
         if (hpPercent < 0) hpPercent = 0;
         if (this.healthBar) this.healthBar.style.width = hpPercent + '%';
 
-        // Nhấp nháy đỏ 0.15s
         this.setBossColor(0xff0000); 
         if (this.flashTimeout) clearTimeout(this.flashTimeout);
         this.flashTimeout = setTimeout(() => {
@@ -392,12 +448,16 @@ export class Boss {
             this.isDead = true;
             this.state = 'die';
             this.speed = 0;
+            
+            // 💡 Tắt toàn bộ âm thanh khi Boss chết
+            this.stopLoopKick();
+            this.stopTheme();
+
             if (this.healthContainer) this.healthContainer.style.display = 'none'; 
             
             this.bossArenaTriggered = false;
             this.setBossColor(0xffffff);
 
-            // Chờ 3s mới hiện End Game
             if (this.endGameTimeout) clearTimeout(this.endGameTimeout);
             this.endGameTimeout = setTimeout(() => {
                 if (this.isDead && this.endGameScreen) {
@@ -412,6 +472,11 @@ export class Boss {
     // ==========================================
     resetBoss() {
         this.bossArenaTriggered = false; 
+        
+        // 💡 Dừng nhạc Boss, bật lại nhạc Game
+        this.stopTheme();
+        this.stopLoopKick();
+
         this.health = this.maxHealth;
         this.isDead = false;
         this.state = 'idle';
@@ -441,13 +506,13 @@ export class Boss {
 
     spawnBullets() {
         const numBullets = 12; 
-        const bulletSpeed = 13.0; // Tốc độ đạn
+        const bulletSpeed = 13.0; 
         
         for (let i = 0; i < numBullets; i++) {
             const angle = (i / numBullets) * Math.PI * 2;
             const dir = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle)).normalize();
 
-            const geo = new THREE.SphereGeometry(0.21, 8, 8); // Đạn to
+            const geo = new THREE.SphereGeometry(0.21, 8, 8); 
             const mat = new THREE.MeshBasicMaterial({ color: 0xff3300 }); 
             const bullet = new THREE.Mesh(geo, mat);
 
@@ -550,7 +615,6 @@ export class Boss {
             let hitPlayer = false;
             [player1, player2].forEach(p => {
                 if (p && p.object && !p.isDead && !hitPlayer) {
-                    // Nâng tâm va chạm lên ngang ngực khớp với đạn
                     const playerHitboxCenter = p.object.position.clone();
                     playerHitboxCenter.y += 1.0; 
 
@@ -590,7 +654,9 @@ export class Boss {
 
             if (isBtn1Pressed && isBtn2Pressed && !this.bossArenaTriggered) {
                 this.bossArenaTriggered = true;
-                console.log("⚔️ ĐẤU TRƯỜNG MỞ! KHÔNG THỂ CHẠY TRỐN!");
+                
+                // 💡 Bật nhạc Boss Theme khi vào Đấu trường
+                this.playTheme();
             }
         }
 
@@ -646,13 +712,13 @@ export class Boss {
             this.state = 'idle';
             this.speed = 0;
             this.stopAnimation(); 
+            this.stopLoopKick(); // 💡 Dừng âm thanh xoay nếu mục tiêu ra xa
             return;
         }
 
         if (this.state !== 'flair') this.flairCooldown -= delta;
         this.kickCooldown -= delta;
 
-        // Cập nhật đồng hồ đi chậm
         if (this.runslowTimer <= 0) {
             this.runslowCooldown -= delta;
         } else {
@@ -662,7 +728,6 @@ export class Boss {
         if (target) {
             const targetPos = new THREE.Vector3(target.object.position.x, this.model.position.y, target.object.position.z);
             
-            // Hết 20s thì bật chế độ đi chậm trong 4s
             if (this.runslowCooldown <= 0 && this.state !== 'flair' && this.state !== 'attack' && this.state !== 'punch') {
                 this.runslowTimer = 4.0;     
                 this.runslowCooldown = 20.0; 
@@ -699,6 +764,10 @@ export class Boss {
             }
             else if (this.state === 'attack') {
                 this.attackTimer -= delta;
+                
+                // 💡 Gọi âm thanh Đá Xoay vòng lặp
+                this.startLoopKick();
+
                 if (this.dashTimer > 0) {
                     this.dashTimer -= delta;
                     this.model.translateZ(this.speed * delta);
@@ -708,7 +777,10 @@ export class Boss {
                     this.killPlayer(target);
                 }
 
-                if (this.attackTimer <= 0) this.state = 'idle'; 
+                if (this.attackTimer <= 0) {
+                    this.state = 'idle'; 
+                    this.stopLoopKick(); // 💡 Dừng âm thanh khi hết chiêu
+                }
             } 
             else if (this.state === 'punch') {
                 this.punchTimer -= delta;
@@ -717,7 +789,9 @@ export class Boss {
                     this.killPlayer(target);
                 }
 
-                if (this.punchTimer <= 0) this.state = 'idle';
+                if (this.punchTimer <= 0) {
+                    this.state = 'idle';
+                }
             }
             else {
                 this.model.lookAt(targetPos);
@@ -736,10 +810,12 @@ export class Boss {
                     this.state = 'punch';
                     this.playAnimation('punch', 0.1);
                     
+                    // 💡 Gọi âm thanh Đá Đơn (Stabbing) 1 lần
+                    this.playSingleKick();
+                    
                     this.speed = 0; 
                     this.punchTimer = 1.0; 
                 } 
-                // 💡 CHỈ PHỤ THUỘC VÀO THỜI GIAN (Xóa bỏ điều kiện khoảng cách)
                 else if (this.runslowTimer > 0) {
                     this.state = 'runslow';
                     this.speed = 1.4; 

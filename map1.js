@@ -13,20 +13,21 @@ const platStartY = 3.7, platTargetY = 10.7;
 const platSpeedY = 0.02;
 
 let controlPanel1, controlPanel2; 
-// 💡 ĐÃ TĂNG TỐC ĐỘ: Từ 0.05 lên 0.15 (Gấp 3 lần)
 const bridgeSpeedX = 0.15; 
 const bridgeLimitMinX = 43, bridgeLimitMaxX = 61; 
 let activeControllerPlayer = null;
 
-// Biến lưu vị trí cũ của bệ để tính Delta X
 let lastBridgeX = 43; 
-// Dùng để trượt bệ mượt mà khi nhận tín hiệu online
 let targetBridgeX = 43; 
 
 const SAVE_POINT = new THREE.Vector3(37, 13, 4);
 const PORTAL_POS = new THREE.Vector3(69, 10, -4); 
 const FALL_LIMIT_Y = -10; 
 let flagMesh = null;
+
+// 💡 Cờ theo dõi trạng thái nút (Để âm thanh chỉ kêu 1 lần lúc mới giẫm)
+let wasBtn1Pressed = false;
+let wasBtn2Pressed = false;
 
 export function loadMap1(scene, colliders) {
     const loader = new GLTFLoader();
@@ -237,6 +238,12 @@ export function updateMap1(player1, player2) {
     let isBtn1 = p1Box.intersectsBox(btn1Box) || p2Box.intersectsBox(btn1Box);
     let isBtn2 = p1Box.intersectsBox(btn2Box) || p2Box.intersectsBox(btn2Box);
     
+    // 💡 GỌI ÂM THANH KHI GIẪM NÚT ĐỎ (Chỉ kêu 1 tiếng lúc mới đặt chân lên)
+    if (isBtn1 && !wasBtn1Pressed) { if (window.playButtonSound) window.playButtonSound(); }
+    if (isBtn2 && !wasBtn2Pressed) { if (window.playButtonSound) window.playButtonSound(); }
+    wasBtn1Pressed = isBtn1;
+    wasBtn2Pressed = isBtn2;
+
     button1.position.y = isBtn1 ? button1.userData.baseY - 0.05 : button1.userData.baseY; button1.material.color.setHex(isBtn1 ? 0x00ff00 : 0xff0000);
     button2.position.y = isBtn2 ? button2.userData.baseY - 0.05 : button2.userData.baseY; button2.material.color.setHex(isBtn2 ? 0x00ff00 : 0xff0000);
 
@@ -256,6 +263,9 @@ export function updateMap1(player1, player2) {
             p.isControllingDevice = !p.isControllingDevice;
             activeControllerPlayer = p.isControllingDevice ? p : null;
             
+            // 💡 GỌI ÂM THANH KHI ĐÓNG/MỞ CẦN GẠT (Cầu trượt)
+            if (window.playButtonSound) window.playButtonSound();
+
             if (!activeControllerPlayer) justReleased = true; 
 
             const color = activeControllerPlayer ? 0x00ff00 : 0xff0000;
@@ -281,7 +291,6 @@ export function updateMap1(player1, player2) {
         }
         
         if (Math.abs(slidingBridge.position.x - targetBridgeX) > 0.01) {
-             // 💡 TĂNG ĐỘ MƯỢT MÀ BÁM SÁT: Nâng từ 0.2 lên 0.4
             slidingBridge.position.x += (targetBridgeX - slidingBridge.position.x) * 0.4;
             if (slidingBridge.children.length > 0) slidingBridge.userData.box.setFromObject(slidingBridge);
         }

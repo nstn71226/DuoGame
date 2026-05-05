@@ -11,6 +11,10 @@ let wallModel2;
 let buttonLeft, buttonRight;
 let isWallUnlocked = false; 
 
+// 💡 Cờ theo dõi trạng thái âm thanh
+let wasLeftPressed = false;
+let wasRightPressed = false;
+
 const WALL_START_Y = 5; 
 const WALL_TARGET_Y = -5; 
 const WALL_SPEED = 5; 
@@ -78,7 +82,6 @@ export function loadMap2(scene, colliders) {
         });
         
         scene.add(portalModel2);
-        console.log("✅ Đã tải Cổng dịch chuyển cho Map 2");
     });
 
     // ==========================================
@@ -209,7 +212,6 @@ export function updateMap2(player1, player2, delta) {
             if (p.currentCheckpointId !== 1) {
                 p.respawnPoint.copy(SAVE_POINT_1);
                 p.currentCheckpointId = 1;
-                console.log(`✅ ${playerName} đã lưu Checkpoint 1!`);
             }
         }
 
@@ -222,7 +224,6 @@ export function updateMap2(player1, player2, delta) {
                     flagMesh2.material.color.setHex(0xffff00);
                     flagMesh2.material.emissive.setHex(0x555500);
                 }
-                console.log(`✅ ${playerName} đã lưu Checkpoint 2 tại cờ!`);
             }
         }
 
@@ -251,6 +252,12 @@ export function updateMap2(player1, player2, delta) {
 
         const isLeftPressed = p1Box.intersectsBox(interactBoxLeft) || p2Box.intersectsBox(interactBoxLeft);
         const isRightPressed = p1Box.intersectsBox(interactBoxRight) || p2Box.intersectsBox(interactBoxRight);
+
+        // 💡 GỌI ÂM THANH KHI GIẪM NÚT ĐỎ Ở MAP 2
+        if (isLeftPressed && !wasLeftPressed) { if (window.playButtonSound) window.playButtonSound(); }
+        if (isRightPressed && !wasRightPressed) { if (window.playButtonSound) window.playButtonSound(); }
+        wasLeftPressed = isLeftPressed;
+        wasRightPressed = isRightPressed;
 
         buttonLeft.position.y = isLeftPressed ? 4.92 : 5;
         buttonLeft.material.color.setHex(isLeftPressed ? 0x00ff00 : 0xff0000);

@@ -47,14 +47,24 @@ export class Player {
     this.targetRotationY = 0;
     this.remoteAnim = "Idle"; 
 
-    // 💡 KHỞI TẠO ÂM THANH (Chỉ máy của ai người nấy nghe tiếng bước chân mình)
+    // 💡 KHỞI TẠO ÂM THANH
     if (this.isLocal) {
         this.runSound = new Audio('models/chay.mp3');
         this.runSound.loop = true;
-        this.runSound.volume = 1;
+        this.runSound.volume = 1.0;
         
         this.jumpSound = new Audio('models/nhay.mp3');
-        this.jumpSound.volume = 1;
+        this.jumpSound.volume = 1.0;
+
+        this.dieSound = new Audio('models/playerdie.mp3');
+        this.dieSound.volume = 1.0;
+
+        // 💡 THÊM MỚI: ÂM THANH ĐÁNH BOSS
+        this.attackSound = new Audio('models/attack.mp3');
+        this.attackSound.volume = 1.0;
+
+        // Lưu lại vị trí cũ để check dịch chuyển
+        this.lastFramePos = startPos.clone();
     }
 
     const anims = animConfig || {
@@ -318,6 +328,12 @@ export class Player {
           this.attackAnimTimer = 1.5;
           this.dealtDamage = false;
 
+          // 💡 GỌI ÂM THANH KHI ĐÁNH
+          if (this.isLocal && window.isSFXOn !== false && this.attackSound) {
+              this.attackSound.currentTime = 0;
+              this.attackSound.play().catch(()=>{});
+          }
+
           this.vfxGroup.visible = true;
           this.slashMesh.scale.set(0.1, 1, 0.1); 
           this.groundRing.scale.set(0.1, 0.1, 0.1);
@@ -372,9 +388,16 @@ export class Player {
     if (this.isLocal) {
         this.checkGamepad();
         const moveDir = new THREE.Vector3(0, 0, 0);
-        
-        // 💡 LẤY TRẠNG THÁI NÚT GẠT TỪ MENU
         const sfxEnabled = window.isSFXOn !== false; 
+
+        // Nhận diện dịch chuyển tức thời để phát tiếng Die
+        if (!window.isTransitioning && this.lastFramePos && this.object.position.distanceTo(this.lastFramePos) > 10.0) {
+            if (sfxEnabled && this.dieSound) {
+                this.dieSound.currentTime = 0;
+                this.dieSound.play().catch(()=>{});
+            }
+        }
+        this.lastFramePos = this.object.position.clone();
 
         if (!this.isControllingDevice && !this.isDead) {
             const forward = new THREE.Vector3();
@@ -403,7 +426,6 @@ export class Player {
               }
             }
             
-            // 💡 PHÁT TIẾNG NHẢY
             if (this.keys[this.keyMap.jump] && this.isGrounded) { 
                 this.velocityY = this.jumpForce; 
                 this.isGrounded = false; 
@@ -414,7 +436,6 @@ export class Player {
             }
         }
 
-        // 💡 PHÁT/DỪNG TIẾNG CHẠY BƯỚC CHÂN
         if (isMoving && this.isGrounded && !this.isDead && !this.isControllingDevice) {
             if (sfxEnabled && this.runSound && this.runSound.paused) {
                 this.runSound.play().catch(()=>{});
@@ -425,7 +446,6 @@ export class Player {
             }
         }
         
-        // Dừng âm thanh ngay lập tức nếu tắt SFX trong menu
         if (!sfxEnabled && this.runSound && !this.runSound.paused) {
             this.runSound.pause();
         }

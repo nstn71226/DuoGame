@@ -414,6 +414,9 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
             
             if (activeCannonPlayer && activeCannonPlayer !== p) return;
 
+            // 💡 GỌI ÂM THANH KHI TƯƠNG TÁC ĐẠI BÁC
+            if (window.playButtonSound) window.playButtonSound();
+
             cannonData.isControlled = !cannonData.isControlled;
             p.isControllingDevice = cannonData.isControlled; 
             
@@ -551,12 +554,16 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
         button1.rotation.y += delta; 
         if (player1.object.position.distanceTo(button1.position) < pickupRadius || player2.object.position.distanceTo(button1.position) < pickupRadius) {
             button1.userData.isCollected = true; scene.remove(button1); 
+            // 💡 GỌI ÂM THANH KHI NHẶT CHÌA KHÓA 1
+            if (window.playButtonSound) window.playButtonSound();
         }
     }
     if (button2 && !button2.userData.isCollected && button2.parent) {
         button2.rotation.y += delta; 
         if (player1.object.position.distanceTo(button2.position) < pickupRadius || player2.object.position.distanceTo(button2.position) < pickupRadius) {
             button2.userData.isCollected = true; scene.remove(button2);
+            // 💡 GỌI ÂM THANH KHI NHẶT CHÌA KHÓA 2
+            if (window.playButtonSound) window.playButtonSound();
         }
     }
 
