@@ -318,12 +318,24 @@ export function syncCannonOnline(isControlling) {
     }
 }
 
-// HÀM ĐỒNG BỘ ZOMBIE TỪ MẠNG (DÀNH CHO MÁY CLIENT)
+// -------------------------------------------------------------
+// 💡 HÀM ĐỒNG BỘ ZOMBIE TỪ MẠNG (ĐÃ FIX LỖI TÀNG HÌNH CHO PLAYER 2)
+// -------------------------------------------------------------
 export function syncZombieOnline(data) {
     if (!zombieData.model) return;
     
-    zombieData.model.position.copy(data.position);
-    zombieData.model.quaternion.copy(data.quaternion);
+    // Ép kiểu thủ công thay vì dùng .copy() do JSON đổi chuẩn
+    zombieData.model.position.set(data.position.x, data.position.y, data.position.z);
+    
+    // Lấy đúng thuộc tính Quaternion bị ẩn qua Socket.io
+    let q = data.quaternion;
+    let qx = q.x !== undefined ? q.x : q._x;
+    let qy = q.y !== undefined ? q.y : q._y;
+    let qz = q.z !== undefined ? q.z : q._z;
+    let qw = q.w !== undefined ? q.w : q._w;
+    
+    zombieData.model.quaternion.set(qx, qy, qz, qw);
+    
     zombieData.health = data.health;
     
     if (data.isDead && !zombieData.isDead) {
