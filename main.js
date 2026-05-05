@@ -30,6 +30,7 @@ window.isMusicOn = true;
 const bgMusic = new Audio('models/musicnen.mp3');
 bgMusic.loop = true;
 bgMusic.volume = 0.15; 
+window.bgMusic = bgMusic;
 
 // 2. Nhạc Menu
 const menuMusic = new Audio('models/nhacnenmenu.mp3');

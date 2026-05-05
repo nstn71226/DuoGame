@@ -319,22 +319,16 @@ export function syncCannonOnline(isControlling) {
 }
 
 // -------------------------------------------------------------
-// 💡 HÀM ĐỒNG BỘ ZOMBIE TỪ MẠNG (ĐÃ FIX LỖI TÀNG HÌNH CHO PLAYER 2)
+// 💡 HÀM ĐỒNG BỘ ZOMBIE TỪ MẠNG (ĐÃ FIX TRIỆT ĐỂ BẰNG SỐ NGUYÊN THỦY)
 // -------------------------------------------------------------
 export function syncZombieOnline(data) {
     if (!zombieData.model) return;
     
-    // Ép kiểu thủ công thay vì dùng .copy() do JSON đổi chuẩn
-    zombieData.model.position.set(data.position.x, data.position.y, data.position.z);
+    // Ép gán trực tiếp số nguyên thủy (px, py, pz) thay vì dùng vector của Threejs
+    zombieData.model.position.set(data.px, data.py, data.pz);
     
-    // Lấy đúng thuộc tính Quaternion bị ẩn qua Socket.io
-    let q = data.quaternion;
-    let qx = q.x !== undefined ? q.x : q._x;
-    let qy = q.y !== undefined ? q.y : q._y;
-    let qz = q.z !== undefined ? q.z : q._z;
-    let qw = q.w !== undefined ? q.w : q._w;
-    
-    zombieData.model.quaternion.set(qx, qy, qz, qw);
+    // Zombie của bạn chỉ xoay trục Y để nhìn Player, nên chỉ cần đồng bộ ry là đủ
+    zombieData.model.rotation.set(0, data.ry, 0);
     
     zombieData.health = data.health;
     
@@ -426,7 +420,6 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
             
             if (activeCannonPlayer && activeCannonPlayer !== p) return;
 
-            // 💡 GỌI ÂM THANH KHI TƯƠNG TÁC ĐẠI BÁC
             if (window.playButtonSound) window.playButtonSound();
 
             cannonData.isControlled = !cannonData.isControlled;
@@ -566,7 +559,6 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
         button1.rotation.y += delta; 
         if (player1.object.position.distanceTo(button1.position) < pickupRadius || player2.object.position.distanceTo(button1.position) < pickupRadius) {
             button1.userData.isCollected = true; scene.remove(button1); 
-            // 💡 GỌI ÂM THANH KHI NHẶT CHÌA KHÓA 1
             if (window.playButtonSound) window.playButtonSound();
         }
     }
@@ -574,7 +566,6 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
         button2.rotation.y += delta; 
         if (player1.object.position.distanceTo(button2.position) < pickupRadius || player2.object.position.distanceTo(button2.position) < pickupRadius) {
             button2.userData.isCollected = true; scene.remove(button2);
-            // 💡 GỌI ÂM THANH KHI NHẶT CHÌA KHÓA 2
             if (window.playButtonSound) window.playButtonSound();
         }
     }
@@ -590,12 +581,16 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
         }
     }
 
-    // Trích xuất Data của Zombie để Host trả về cho Network
+    // -------------------------------------------------------------
+    // 💡 ĐÓNG GÓI DỮ LIỆU BẰNG SỐ NGUYÊN THỦY (KHÔNG DÙNG CLONE)
+    // -------------------------------------------------------------
     let zombieSyncData = null;
     if (isHost && zombieData.model) {
         zombieSyncData = {
-            position: zombieData.model.position.clone(),
-            quaternion: zombieData.model.quaternion.clone(), 
+            px: zombieData.model.position.x,
+            py: zombieData.model.position.y,
+            pz: zombieData.model.position.z,
+            ry: zombieData.model.rotation.y, // Chỉ lấy góc xoay trục Y
             state: zombieData.state,
             health: zombieData.health,
             isDead: zombieData.isDead
