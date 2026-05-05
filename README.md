@@ -29,6 +29,18 @@ Mở thư mục vừa giải nén và chạy file:
 
 ---
 
+## Chơi Online
+
+### Người tạo phòng (Host)
+
+1. Mở game
+2. Chọn **Create Room**
+3. Nhập bất kỳ ID phòng nào (ví dụ: `1234`)
+4. Chờ hệ thống tạo phòng
+5. Gửi ID cho người chơi còn lại
+
+---
+
 ## Điều khiển
 
 ### Player 1
@@ -64,17 +76,6 @@ Khi chơi bằng bàn phím cho Player 2, nhân vật **không thể xoay màn h
 
 Nếu gặp khó khăn khi giải đố, hãy kiểm tra phần hướng dẫn trước.
 
----
-
-## Chơi Online
-
-### Người tạo phòng (Host)
-
-1. Mở game
-2. Chọn **Create Room**
-3. Nhập bất kỳ ID phòng nào (ví dụ: `1234`)
-4. Chờ hệ thống tạo phòng
-5. Gửi ID cho người chơi còn lại
 
 ---
 
