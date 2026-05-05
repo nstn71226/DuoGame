@@ -1,4 +1,5 @@
 # DUOGAME
+<img width="1919" height="1109" alt="Ảnh chụp màn hình 2026-05-04 183002" src="https://github.com/user-attachments/assets/ba20f0aa-f08a-48d8-a8c5-87dadfa420b7" />
 
 ## Hướng dẫn cài đặt và chơi game
 
@@ -30,6 +31,7 @@ Mở thư mục vừa giải nén và chạy file:
 ---
 
 ## Chơi Online
+<img width="1915" height="1106" alt="Ảnh chụp màn hình 2026-05-04 183156" src="https://github.com/user-attachments/assets/02cf68c2-b20b-443f-ad73-68546a75f1e2" />
 
 ### Người tạo phòng (Host)
 
@@ -49,6 +51,7 @@ Mở thư mục vừa giải nén và chạy file:
 
 ---
 ## Điều khiển
+<img width="1918" height="1097" alt="Ảnh chụp màn hình 2026-05-05 212138" src="https://github.com/user-attachments/assets/31b8abd8-fed1-4279-9663-eadd7c0e7e0c" />
 
 ### Player 1
 
