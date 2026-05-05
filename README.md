@@ -40,7 +40,14 @@ Mở thư mục vừa giải nén và chạy file:
 5. Gửi ID cho người chơi còn lại
 
 ---
+### Người tham gia (Join)
 
+1. Mở game
+2. Chọn **Join Room**
+3. Nhập đúng ID phòng
+4. Kết nối vào game
+
+---
 ## Điều khiển
 
 ### Player 1
@@ -79,14 +86,6 @@ Nếu gặp khó khăn khi giải đố, hãy kiểm tra phần hướng dẫn t
 
 ---
 
-### Người tham gia (Join)
-
-1. Mở game
-2. Chọn **Join Room**
-3. Nhập đúng ID phòng
-4. Kết nối vào game
-
----
 
 ## Lưu ý quan trọng
 
