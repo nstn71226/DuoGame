@@ -5,7 +5,7 @@
 DUOGAME là game co-op giải đố hành động với cơ chế phối hợp giữa 2 nhân vật.
 Điều kiện tiên quyết để chơi:
 
-* Có **2 người chơi hoặc biết phân thân**
+* Có **2 người chơi **
 
 ---
 
