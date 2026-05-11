@@ -366,15 +366,13 @@ document.getElementById('join-game-btn').addEventListener('click', () => {
     if (roomId) initOnline(roomId, 'joinRoom');
 });
 
-// ==========================================
-// 💡 CỖ MÁY DỌN DẸP SỰ KIỆN (RESET MAP)
-// ==========================================
+//(RESET MAP)
 function executeMapReset(mapIndex) {
     const startMapPositions = {
         1: [new THREE.Vector3(-2, 5, 2), new THREE.Vector3(0, 5, 2)],
         2: [new THREE.Vector3(998, 4, 1000), new THREE.Vector3(995, 4, 1000)],
         3: [new THREE.Vector3(989, 1, -53), new THREE.Vector3(987, 1, -53)],
-        4: [new THREE.Vector3(481, 8, 505), new THREE.Vector3(480, 8, 505)]
+        4: [new THREE.Vector3(481, 2, 505), new THREE.Vector3(480, 2, 505)]
     };
     
     player1.object.position.copy(startMapPositions[mapIndex][0]);
@@ -441,7 +439,7 @@ function executeMapReset(mapIndex) {
 }
 
 // ==========================================
-// 💡 LOGIC MENU TẠM DỪNG (PAUSE MENU) ĐỒNG BỘ
+// LOGIC MENU TẠM DỪNG (PAUSE MENU) ĐỒNG BỘ
 // ==========================================
 const pauseMenu = document.getElementById('pause-menu-modal');
 
@@ -453,7 +451,7 @@ document.addEventListener('pointerlockchange', () => {
                 socket.emit('gameAction', { type: 'resumeGame' });
             }
             isNetworkPause = false; 
-            clock.getDelta(); // 💡 VÁ LỖI ALT-TAB
+            clock.getDelta();  
         } else {
             if (pauseMenu) pauseMenu.style.display = 'flex';
             if (gameMode === 'online' && socket && !isNetworkPause) {

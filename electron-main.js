@@ -13,11 +13,10 @@ function createWindow () {
         }
     });
 
-    // Mở file index.html của game
+    
     win.loadFile('index.html');
     
-    // Nếu bạn muốn game tự động Full Màn Hình khi mở lên thì bỏ dấu // ở dòng dưới:
-    // win.setFullScreen(true); 
+    
 }
 
 app.whenReady().then(createWindow);

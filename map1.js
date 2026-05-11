@@ -6,6 +6,7 @@ export let autoPlatforms = [];
 export let movingPlatform = null;
 export let slidingBridge = null;
 export let portalModel = null; 
+export let interactUI = null; // Biến lưu giao diện nút E
 
 // --- CÁC BIẾN TRẠNG THÁI & CONSTANTS ---
 let button1, button2;
@@ -161,6 +162,34 @@ export function loadMap1(scene, colliders) {
     
     controlPanel1 = new THREE.Mesh(panelGeo, sharedPanelMat); controlPanel1.position.set(37, 13, 7); scene.add(controlPanel1);
     controlPanel2 = new THREE.Mesh(panelGeo, sharedPanelMat.clone()); controlPanel2.position.set(65, 12.5, 6); scene.add(controlPanel2);
+
+    // 💡 TẠO GIAO DIỆN CHỮ "E" BẰNG HTML/CSS
+    if (!document.getElementById("interact-prompt")) {
+        interactUI = document.createElement("div");
+        interactUI.id = "interact-prompt";
+        interactUI.style.cssText = `
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            pointer-events: none; /* Không chặn click chuột */
+            z-index: 1000;
+            display: none; /* Mặc định ẩn */
+            border: 2px solid #555;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
+        `;
+        document.body.appendChild(interactUI);
+    } else {
+        interactUI = document.getElementById("interact-prompt");
+    }
 }
 
 export function syncBridgeOnline(newX, isControlling) {
@@ -181,6 +210,10 @@ export function updateMap1(player1, player2) {
     let deltaPlatY = 0;
     let deltaBridgeX = 0;
     let justReleased = false; 
+
+    // Biến theo dõi hiển thị UI
+    let shouldShowUI = false;
+    let uiText = "";
 
     if (flagMesh) {
         const time = Date.now() * 0.003; 
@@ -238,7 +271,6 @@ export function updateMap1(player1, player2) {
     let isBtn1 = p1Box.intersectsBox(btn1Box) || p2Box.intersectsBox(btn1Box);
     let isBtn2 = p1Box.intersectsBox(btn2Box) || p2Box.intersectsBox(btn2Box);
     
-    // 💡 GỌI ÂM THANH KHI GIẪM NÚT ĐỎ (Chỉ kêu 1 tiếng lúc mới đặt chân lên)
     if (isBtn1 && !wasBtn1Pressed) { if (window.playButtonSound) window.playButtonSound(); }
     if (isBtn2 && !wasBtn2Pressed) { if (window.playButtonSound) window.playButtonSound(); }
     wasBtn1Pressed = isBtn1;
@@ -256,14 +288,26 @@ export function updateMap1(player1, player2) {
     function checkPanels(p) {
         const dist1 = p.object.position.distanceTo(controlPanel1.position);
         const dist2 = p.object.position.distanceTo(controlPanel2.position);
-        
-        if ((dist1 < 1.5 || dist2 < 1.5) && p.justPressedInteract()) {
+        const isNear = dist1 < 1.5 || dist2 < 1.5;
+
+        // 💡 XỬ LÝ GIAO DIỆN CHỮ E
+        if (isNear) {
+            shouldShowUI = true;
+            if (p.isControllingDevice) {
+                uiText = 'Nhấn <span style="color:#ff4444;">[E]</span> để Hủy điều khiển';
+            } else if (!activeControllerPlayer) {
+                uiText = 'Nhấn <span style="color:#00ff00;">[E]</span> để Điều khiển cầu';
+            } else {
+                uiText = 'Người khác đang điều khiển...';
+            }
+        }
+
+        if (isNear && p.justPressedInteract()) {
             if (activeControllerPlayer && activeControllerPlayer !== p) return;
 
             p.isControllingDevice = !p.isControllingDevice;
             activeControllerPlayer = p.isControllingDevice ? p : null;
             
-            // 💡 GỌI ÂM THANH KHI ĐÓNG/MỞ CẦN GẠT (Cầu trượt)
             if (window.playButtonSound) window.playButtonSound();
 
             if (!activeControllerPlayer) justReleased = true; 
@@ -278,6 +322,16 @@ export function updateMap1(player1, player2) {
     
     checkPanels(player1);
     checkPanels(player2);
+
+    // 💡 CẬP NHẬT HIỂN THỊ HTML UI CHO NGƯỜI CHƠI
+    if (interactUI) {
+        if (shouldShowUI) {
+            interactUI.style.display = "block";
+            interactUI.innerHTML = uiText;
+        } else {
+            interactUI.style.display = "none";
+        }
+    }
 
     if (slidingBridge) {
         if (activeControllerPlayer) {

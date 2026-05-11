@@ -124,7 +124,6 @@ export function loadMap4(scene, colliders) {
             
             daibacModel.traverse((child) => {
                 if (child.isMesh) {
-                    // 💡 BẬT ĐỔ BÓNG CHO ĐẠI BÁC
                     child.castShadow = true; 
                     child.receiveShadow = true;
                     child.material = cannonMat; 
@@ -148,7 +147,6 @@ export function loadMap4(scene, colliders) {
             danModel.scale.set(1, 1, 1); 
             danModel.traverse((child) => {
                 if (child.isMesh) {
-                    // 💡 BẬT ĐỔ BÓNG CHO ĐẠN ĐẠI BÁC
                     child.castShadow = true;
                     child.receiveShadow = true;
                     if (map4Material) child.material = map4Material;
@@ -197,7 +195,6 @@ export function loadMap4(scene, colliders) {
             });
             keyModel.traverse((child) => {
                 if (child.isMesh) { 
-                    // 💡 BẬT ĐỔ BÓNG CHO CHÌA KHÓA
                     child.castShadow = true; 
                     child.receiveShadow = true; 
                     child.material = goldMaterial; 
@@ -215,7 +212,6 @@ export function loadMap4(scene, colliders) {
         zModel.position.copy(zombieData.spawnPos); 
         zModel.traverse((child) => { 
             if (child.isMesh) { 
-                // 💡 BẬT ĐỔ BÓNG CHO ZOMBIE
                 child.castShadow = true; 
                 child.receiveShadow = true; 
             } 
@@ -247,7 +243,6 @@ export function loadMap4(scene, colliders) {
 
     barrier = new THREE.Mesh(new THREE.BoxGeometry(4, 7, 0.5), new THREE.MeshStandardMaterial({ color: 0x444444 }));
     barrier.position.set(490.5, 1, 474); 
-    // 💡 BẬT ĐỔ BÓNG CHO RÀO CHẮN
     barrier.castShadow = true;
     barrier.receiveShadow = true;
     barrier.userData.box = new THREE.Box3().setFromObject(barrier);
@@ -264,7 +259,6 @@ export function loadMap4(scene, colliders) {
     const poleMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.2 });
     const pole = new THREE.Mesh(poleGeo, poleMat);
     pole.position.y = 1; 
-    // 💡 BẬT ĐỔ BÓNG CHO CỘT CỜ
     pole.castShadow = true;
     pole.receiveShadow = true;
     flagGroup.add(pole);
@@ -276,7 +270,6 @@ export function loadMap4(scene, colliders) {
     });
     flagCloth = new THREE.Mesh(clothGeo, clothMat);
     flagCloth.position.set(1, 2.5, 0); 
-    // 💡 BẬT ĐỔ BÓNG CHO VẢI CỜ
     flagCloth.castShadow = true;
     flagCloth.receiveShadow = true;
     flagGroup.add(flagCloth);
@@ -319,17 +312,13 @@ export function syncCannonOnline(isControlling) {
 }
 
 // -------------------------------------------------------------
-// 💡 HÀM ĐỒNG BỘ ZOMBIE TỪ MẠNG (ĐÃ FIX TRIỆT ĐỂ BẰNG SỐ NGUYÊN THỦY)
+// 💡 HÀM ĐỒNG BỘ ZOMBIE TỪ MẠNG 
 // -------------------------------------------------------------
 export function syncZombieOnline(data) {
     if (!zombieData.model) return;
     
-    // Ép gán trực tiếp số nguyên thủy (px, py, pz) thay vì dùng vector của Threejs
     zombieData.model.position.set(data.px, data.py, data.pz);
-    
-    // Zombie của bạn chỉ xoay trục Y để nhìn Player, nên chỉ cần đồng bộ ry là đủ
     zombieData.model.rotation.set(0, data.ry, 0);
-    
     zombieData.health = data.health;
     
     if (data.isDead && !zombieData.isDead) {
@@ -345,9 +334,6 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
     
     cannonJustReleased = false; 
 
-    // ----------------------------------------
-    // 🛡️ LOGIC LƯU ĐIỂM VÀ RƠI VỰC
-    // ----------------------------------------
     function checkCheckpointsAndFall(p) {
         if (!p.respawnPoint) {
             p.respawnPoint = SAVE_POINT_1.clone();
@@ -372,9 +358,6 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
     checkCheckpointsAndFall(player1);
     checkCheckpointsAndFall(player2);
 
-    // ----------------------------------------
-    // 🔥 LOGIC BÃI LỬA 
-    // ----------------------------------------
     if (fireZone) {
         fireZone.material.opacity = 0.6 + Math.random() * 0.4;
         if (fireSparks.length > 0) {
@@ -411,9 +394,6 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
         }
     }
 
-    // ----------------------------------------
-    // 💣 BẬT/TẮT ĐIỀU KHIỂN ĐẠI BÁC
-    // ----------------------------------------
     function checkCannonInteraction(p) {
         const distToCannon = p.object.position.distanceTo(cannonData.pos);
         if (distToCannon < 4 && p.justPressedInteract()) {
@@ -488,7 +468,63 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
     if (zombieData.model) {
         if (zombieData.mixer) zombieData.mixer.update(delta);
 
-        if (isHost && !zombieData.isDead) {
+        // 💡 1. XỬ LÝ VA CHẠM ĐỘC LẬP TẠI TỪNG MÁY KHÁCH
+        if (zombieData.state === 'attack') {
+            zombieData.attackTimer += delta;
+            
+            const hitTime = 0.8; 
+            const animTime = 1.1; 
+
+            // Cả Host và Client tự kiểm tra va chạm cho nhân vật LOCAL của mình
+            [player1, player2].forEach(p => {
+                if (!p.isLocal) return;
+
+                // Giây 0.8: Đánh dấu đã bị cắn
+                if (zombieData.attackTimer >= hitTime && !p.zombieChecked) {
+                    if (zombieData.model.position.distanceTo(p.object.position) < zombieData.attackRange + 1.5) {
+                        p.zombieMarkedForTeleport = true; 
+                    }
+                    p.zombieChecked = true; 
+                }
+
+                // Giây 1.5: Dịch chuyển ai bị cắn
+                if (zombieData.attackTimer >= animTime && p.zombieMarkedForTeleport) {
+                    p.object.position.copy(p.respawnPoint || SAVE_POINT_1);
+                    if (p.velocity) p.velocity.set(0, 0, 0);
+                    p.velocityY = 0;
+                    if (p.isControllingDevice) { p.isControllingDevice = false; cannonData.isControlled = false; }
+                    p.zombieMarkedForTeleport = false;
+                }
+                
+                if (zombieData.attackTimer >= animTime) {
+                    p.zombieChecked = false;
+                }
+            });
+
+            if (zombieData.attackTimer >= animTime) {
+                zombieData.attackTimer = 0;
+                if (isHost && !zombieData.isDead) {
+                    zombieData.state = 'evaluating'; 
+                    zombieData.currentTarget = null;
+                }
+            }
+        } else {
+            // Nếu mạng lag khiến state bị đổi sớm, bắt buộc dịch chuyển những ai đã bị cắn
+            [player1, player2].forEach(p => {
+                if (p.isLocal && p.zombieMarkedForTeleport) {
+                    p.object.position.copy(p.respawnPoint || SAVE_POINT_1);
+                    if (p.velocity) p.velocity.set(0, 0, 0);
+                    p.velocityY = 0;
+                    if (p.isControllingDevice) { p.isControllingDevice = false; cannonData.isControlled = false; }
+                    p.zombieMarkedForTeleport = false;
+                }
+                p.zombieChecked = false;
+            });
+            zombieData.attackTimer = 0;
+        }
+
+        // 💡 2. DI CHUYỂN VÀ TÌM MỤC TIÊU (CHỈ CHẠY TRÊN MÁY HOST)
+        if (isHost && !zombieData.isDead && zombieData.state !== 'attack') {
             const zPos = zombieData.model.position;
             const p1Pos = player1.object.position;
             const p2Pos = player2.object.position;
@@ -499,61 +535,30 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
             if (d1 < zombieData.agroRange) { target = player1; minDist = d1; }
             if (d2 < zombieData.agroRange && d2 < minDist) { target = player2; minDist = d2; }
 
-            if (zombieData.state === 'attack') {
-                zombieData.attackTimer += delta;
+            if (target) {
+                const targetPos = new THREE.Vector3(target.object.position.x, zPos.y, target.object.position.z);
+                zombieData.model.lookAt(targetPos);
                 
-                const hitTime = 0.8; 
-                const animTime = 1.5; 
-
-                if (zombieData.attackTimer >= hitTime && !zombieData.hasHit && zombieData.currentTarget) {
-                    let cTarget = zombieData.currentTarget;
-                    
-                    if (zPos.distanceTo(cTarget.object.position) < zombieData.attackRange + 1.5) {
-                        cTarget.object.position.copy(cTarget.respawnPoint || SAVE_POINT_1);
-                        if (cTarget.velocity) cTarget.velocity.set(0, 0, 0);
-                        cTarget.velocityY = 0;
-                        if (cTarget.isControllingDevice) {
-                            cTarget.isControllingDevice = false;
-                            cannonData.isControlled = false;
-                        }
-                    }
-                    zombieData.hasHit = true; 
+                if (minDist > zombieData.attackRange) {
+                    setZombieAnim('run'); 
+                    zombieData.model.translateZ(zombieData.speed * delta);
+                } else { 
+                    setZombieAnim('attack'); 
+                    zombieData.attackTimer = 0; 
+                    zombieData.currentTarget = target; 
                 }
-
-                if (zombieData.attackTimer >= animTime) {
-                    zombieData.state = 'evaluating'; 
-                }
-
             } else {
-                if (target) {
-                    const targetPos = new THREE.Vector3(target.object.position.x, zPos.y, target.object.position.z);
-                    zombieData.model.lookAt(targetPos);
-                    
-                    if (minDist > zombieData.attackRange) {
-                        setZombieAnim('run'); 
-                        zombieData.model.translateZ(zombieData.speed * delta);
-                    } else { 
-                        setZombieAnim('attack'); 
-                        zombieData.attackTimer = 0; 
-                        zombieData.hasHit = false;  
-                        zombieData.currentTarget = target; 
-                    }
-                } else {
-                    const distToSpawn = zPos.distanceTo(zombieData.spawnPos);
-                    if (distToSpawn > 0.5) { 
-                        const homePos = new THREE.Vector3(zombieData.spawnPos.x, zPos.y, zombieData.spawnPos.z);
-                        zombieData.model.lookAt(homePos);
-                        setZombieAnim('run'); 
-                        zombieData.model.translateZ(zombieData.speed * delta);
-                    } else { setZombieAnim('idle'); }
-                }
+                const distToSpawn = zPos.distanceTo(zombieData.spawnPos);
+                if (distToSpawn > 0.5) { 
+                    const homePos = new THREE.Vector3(zombieData.spawnPos.x, zPos.y, zombieData.spawnPos.z);
+                    zombieData.model.lookAt(homePos);
+                    setZombieAnim('run'); 
+                    zombieData.model.translateZ(zombieData.speed * delta);
+                } else { setZombieAnim('idle'); }
             }
         }
     }
 
-    // ----------------------------------------
-    // 🔑 HỆ THỐNG NHẶT CHÌA KHÓA
-    // ----------------------------------------
     const pickupRadius = 1.5; 
     if (button1 && !button1.userData.isCollected && button1.parent) {
         button1.rotation.y += delta; 
@@ -570,9 +575,6 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
         }
     }
 
-    // ----------------------------------------
-    // ⛩️ ĐIỀU KIỆN MỞ RÀO CHẮN
-    // ----------------------------------------
     const hasAllKeys = (button1 && button1.userData.isCollected) && (button2 && button2.userData.isCollected);
     if (hasAllKeys && zombieData.isDead) {
         if (barrier.position.y > -5) {
@@ -581,16 +583,13 @@ export function updateMap4(player1, player2, delta = 0.016, scene, isHost = true
         }
     }
 
-    // -------------------------------------------------------------
-    // 💡 ĐÓNG GÓI DỮ LIỆU BẰNG SỐ NGUYÊN THỦY (KHÔNG DÙNG CLONE)
-    // -------------------------------------------------------------
     let zombieSyncData = null;
     if (isHost && zombieData.model) {
         zombieSyncData = {
             px: zombieData.model.position.x,
             py: zombieData.model.position.y,
             pz: zombieData.model.position.z,
-            ry: zombieData.model.rotation.y, // Chỉ lấy góc xoay trục Y
+            ry: zombieData.model.rotation.y, 
             state: zombieData.state,
             health: zombieData.health,
             isDead: zombieData.isDead

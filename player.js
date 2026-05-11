@@ -382,7 +382,7 @@ export class Player {
     
     if (this.mixer && !this.currentAction && this.animations.length > 0) this.playAnimation('Idle');
 
-    const speed = 0.07; 
+    const speed = 0.2; 
     let isMoving = false; 
 
     if (this.isLocal) {
